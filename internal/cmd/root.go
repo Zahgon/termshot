@@ -23,13 +23,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gonvenience/bunt"
-	"github.com/gonvenience/neat"
 
 	"github.com/homeport/termshot/internal/img"
 	"github.com/homeport/termshot/internal/ptexec"
@@ -239,61 +236,11 @@ window including all terminal colors and text decorations.
 }
 
 // Execute is the main entry point into the CLI code
-func Execute() {
-	rootCmd.SetFlagErrorFunc(func(c *cobra.Command, e error) error {
-		return fmt.Errorf("unknown %s flag %w",
-			executableName(),
-			fmt.Errorf("issue with %v\n\nIn order to differentiate between program flags and command flags,\nuse '--' before the command so that all flags before the separator\nbelong to %s, while all others are used for the command.\n\n%s", e, executableName(), c.UsageString()),
-		)
-	})
+func Execute() { _ = "STUB: not implemented"; return }
 
-	if err := rootCmd.Execute(); err != nil {
-		var headline, content string
+func executableName() string { _ = "STUB: not implemented"; return "" }
 
-		type wrappedError interface {
-			Error() string
-			Unwrap() error
-		}
-
-		switch err := err.(type) {
-		case wrappedError:
-			headline = strings.SplitN(err.Error(), ":", 2)[0]
-			content = err.Unwrap().Error()
-
-		default:
-			headline = "Error occurred"
-			content = err.Error()
-		}
-
-		fmt.Fprint(os.Stderr, neat.ContentBox(
-			headline,
-			content,
-			neat.HeadlineColor(bunt.OrangeRed),
-			neat.ContentColor(bunt.LightCoral),
-			neat.NoLineWrap(),
-		))
-
-		os.Exit(1)
-	}
-}
-
-func executableName() string {
-	if executable, err := os.Executable(); err == nil {
-		return filepath.Clean(filepath.Base(executable))
-	}
-
-	return "termshot"
-}
-
-func readFile(name string) ([]byte, error) {
-	switch name {
-	case "-":
-		return io.ReadAll(os.Stdin)
-
-	default:
-		return os.ReadFile(filepath.Clean(name))
-	}
-}
+func readFile(name string) ([]byte, error) { _ = "STUB: not implemented"; return nil, nil }
 
 func init() {
 	rootCmd.Flags().SortFlags = false

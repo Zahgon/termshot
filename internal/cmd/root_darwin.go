@@ -33,13 +33,7 @@ import (
 const osascript = "/usr/bin/osascript"
 
 // hasOsascript checks if /usr/bin/osascript exists and is executable
-func hasOsascript() bool {
-	if fi, err := os.Stat(osascript); err == nil {
-		return fi.Mode()&0111 != 0
-	}
-
-	return false
-}
+func hasOsascript() bool { _ = "STUB: not implemented"; return false }
 
 func init() {
 	if hasOsascript() {

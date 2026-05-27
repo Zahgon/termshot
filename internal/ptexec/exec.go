@@ -21,18 +21,9 @@
 package ptexec
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
-	"strings"
-	"syscall"
-
-	"github.com/creack/pty"
-	"github.com/mattn/go-isatty"
-	"golang.org/x/term"
 )
 
 // PseudoTerminal defines the setup for a command to be run in a pseudo
@@ -51,181 +42,71 @@ type PseudoTerminal struct {
 }
 
 // New creates a new pseudo terminal builder
-func New() *PseudoTerminal {
-	return &PseudoTerminal{
-		shell:  "/bin/sh",
-		resize: true,
-		stdout: os.Stdout,
-	}
-}
+func New() *PseudoTerminal { _ = "STUB: not implemented"; return nil }
 
 // Cols sets the width/columns for the pseudo terminal
-func (c *PseudoTerminal) Cols(cols uint16) *PseudoTerminal {
-	c.cols = cols
-	return c
-}
+func (c *PseudoTerminal) Cols(cols uint16) *PseudoTerminal { _ = "STUB: not implemented"; return nil }
 
 // Rows sets the lines/rows for the pseudo terminal
-func (c *PseudoTerminal) Rows(rows uint16) *PseudoTerminal {
-	c.rows = rows
-	return c
-}
+func (c *PseudoTerminal) Rows(rows uint16) *PseudoTerminal { _ = "STUB: not implemented"; return nil }
 
 // Stdout sets the writer to be used for the standard output
 func (c *PseudoTerminal) Stdout(stdout io.Writer) *PseudoTerminal {
-	c.stdout = stdout
-	return c
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // Command sets the command and arguments to be used
 func (c *PseudoTerminal) Command(name string, args ...string) *PseudoTerminal {
-	c.name = name
-	c.args = args
-	return c
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // Run runs the provided command/script with the given arguments in a pseudo
 // terminal (PTY) so that the behavior is the same if it would be executed
 // in a terminal
-func (c *PseudoTerminal) Run() ([]byte, error) {
-	if c.name == "" {
-		return nil, fmt.Errorf("no command specified")
-	}
+func (c *PseudoTerminal) Run() ([]byte, error) { _ = "STUB: not implemented"; return nil, nil }
 
-	// Convenience hack in case command contains a space, for example in case
-	// typical construct like "foo | grep" are used.
-	if strings.Contains(c.name, " ") {
-		c.args = []string{
-			"-c",
-			strings.Join(append(
-				[]string{c.name},
-				c.args...,
-			), " "),
-		}
-		c.name = c.shell
-	}
+// Convenience hack in case command contains a space, for example in case
+// typical construct like "foo | grep" are used.
 
-	// Set RAW mode for Stdin
-	if isTerminal(os.Stdin) {
-		oldState, rawErr := term.MakeRaw(int(os.Stdin.Fd()))
-		if rawErr != nil {
-			return nil, fmt.Errorf("failed to enable RAW mode for Stdin: %w", rawErr)
-		}
+// Set RAW mode for Stdin
 
-		// And make sure to restore the original mode eventually
-		defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
-	}
+// And make sure to restore the original mode eventually
 
-	// collect all errors along the way
-	var errors = []error{}
+// collect all errors along the way
 
-	// #nosec G204 -- since this is exactly what we want, arbitrary commands
-	pt, err := c.pseudoTerminal(exec.Command(c.name, c.args...))
-	if err != nil {
-		return nil, err
-	}
+// #nosec G204 -- since this is exactly what we want, arbitrary commands
 
-	// Support terminal resizing
-	if c.resize && isTerminal(os.Stdin) {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGWINCH)
-		go func() {
-			for range ch {
-				if ptyErr := pty.InheritSize(os.Stdin, pt); ptyErr != nil {
-					errors = append(errors, fmt.Errorf("error resizing PTY: %w", ptyErr))
-				}
-			}
-		}()
-
-		ch <- syscall.SIGWINCH
-		defer func() {
-			signal.Stop(ch)
-			close(ch)
-		}()
-	}
-
-	go func() {
-		defer func() { _ = pt.Close() }()
-		_, copyErr := io.Copy(pt, os.Stdin)
-		if copyErr != nil {
-			errors = append(errors, copyErr)
-		}
-	}()
-
-	var buf bytes.Buffer
-	if err = copy(io.MultiWriter(c.stdout, &buf), pt); err != nil {
-		return nil, err
-	}
-
-	if len(errors) > 0 {
-		fmt.Fprintf(os.Stderr, "issues in background tasks:\n")
-		for _, err := range errors {
-			fmt.Fprintf(os.Stderr, "- %v\n", err.Error())
-		}
-	}
-
-	return buf.Bytes(), nil
-}
+// Support terminal resizing
 
 func (c *PseudoTerminal) pseudoTerminal(cmd *exec.Cmd) (*os.File, error) {
-	if c.cols == 0 && c.rows == 0 {
-		return pty.Start(cmd)
-	}
-
-	size, err := pty.GetsizeFull(os.Stdout)
-	if err != nil {
-		// Obtaining terminal size is prone to error in CI systems, e.g. in
-		// GitHub Action setup or similar, so only fail if CI is not set
-		if !isCI() {
-			return nil, fmt.Errorf("failed to get size: %w", err)
-		}
-
-		// For CI systems, assume a reasonable default even if the terminal
-		// size cannot be obtained through ioctl
-		size = &pty.Winsize{Rows: 25, Cols: 80}
-	}
-
-	// Overwrite rows if fixed value is configured
-	if c.rows != 0 {
-		size.Rows = c.rows
-	}
-
-	// Overwrite columns if fixed value is configured
-	if c.cols != 0 {
-		size.Cols = c.cols
-	}
-
-	// With fixed rows/cols, terminal resizing support is not useful
-	c.resize = false
-
-	return pty.StartWithSize(cmd, size)
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
-func copy(dst io.Writer, src io.Reader) error {
-	_, err := io.Copy(dst, src)
-	if err != nil {
-		switch terr := err.(type) { //nolint:gocritic
-		case *os.PathError:
-			// Workaround for issue https://github.com/creack/pty/issues/100
-			// where on Linux systems it can happen that the pseudo terminal
-			// process finishes while termshot is trying to read. Assuming
-			// that the content is already read, this error is treated the
-			// same as if it would be an EOF.
-			if terr.Op == "read" && terr.Path == "/dev/ptmx" {
-				return nil
-			}
-		}
-	}
+// Obtaining terminal size is prone to error in CI systems, e.g. in
+// GitHub Action setup or similar, so only fail if CI is not set
 
-	return err
-}
+// For CI systems, assume a reasonable default even if the terminal
+// size cannot be obtained through ioctl
 
-func isTerminal(f *os.File) bool {
-	return isatty.IsTerminal(f.Fd()) ||
-		isatty.IsCygwinTerminal(f.Fd())
-}
+// Overwrite rows if fixed value is configured
 
-func isCI() bool {
-	ci, ok := os.LookupEnv("CI")
-	return ok && ci == "true"
-}
+// Overwrite columns if fixed value is configured
+
+// With fixed rows/cols, terminal resizing support is not useful
+
+func copy(dst io.Writer, src io.Reader) error { _ = "STUB: not implemented"; return nil }
+
+//nolint:gocritic
+
+// Workaround for issue https://github.com/creack/pty/issues/100
+// where on Linux systems it can happen that the pseudo terminal
+// process finishes while termshot is trying to read. Assuming
+// that the content is already read, this error is treated the
+// same as if it would be an EOF.
+
+func isTerminal(f *os.File) bool { _ = "STUB: not implemented"; return false }
+
+func isCI() bool { _ = "STUB: not implemented"; return false }
